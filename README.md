@@ -4,7 +4,7 @@
 
 Test Lucas TVS starter motors and alternators using the Knowles KAS-700-0164, Raspberry Pi Pico 2 W, and Compute Module 5 on its IO Board. The mic is on hand and awaiting wiring. This roadmap covers the bench prototype. Production thresholds and component-level diagnoses require evidence from real units.
 
-**Next model switch is GPT-6.2 Sol Low for task 10, CM5 handoff.** Tasks 1–9 have source or documentation. Physical hardware verification remains open. Each numbered task has a primary file to create or extend. Reuse compatible code when available and record its actual path here. Add supporting build and test files alongside the implementation.
+**The software handoff is ready.** Physical hardware verification remains open. Start with the [CM5 handoff](docs/cm5-handoff.md). Each numbered task has a primary file to create or extend. Reuse compatible code when available and record its actual path here. Add supporting build and test files alongside the implementation.
 
 | Task | Model and effort | Primary file | Work and completion check |
 |---|---|---|---|
@@ -17,7 +17,7 @@ Test Lucas TVS starter motors and alternators using the Knowles KAS-700-0164, Ra
 | 7. Connect firmware to USB | GPT-6.2 Sol Medium | [firmware/usb_stream.c](firmware/usb_stream.c) | Integrate acquisition and decimation with framing, backpressure handling and a synthetic-source build. Compare frames with task 2's example and exercise disconnect and recovery. |
 | 8. Receive and store a run on CM5 | GPT-6.2 Sol Medium | [bench/receive.py](bench/receive.py) | Decode partial reads, check CRC and continuity, record waveform and metadata, and invoke the evaluator. Replay every fixture and confirm interrupted captures stay invalid. |
 | 9. Verify the integrated bench | GPT-6.2 Sol Medium | [tests/test_bench.py](tests/test_bench.py) | Run host regression and replay tests and cross-build both Pico targets. On hardware, verify synthetic transport first, then wired microphone timing, sustained capture and repeatability. Track pending physical checks separately. |
-| 10. Package the CM5 handoff | GPT-6.2 Sol Low | docs/cm5-handoff.md | Record verified environment, build and run commands, expected outputs, recovery steps and open checks. Link each completed subtask from this README. Identify the commit and firmware artifact for the deployment session. |
+| 10. Package the CM5 handoff | GPT-6.2 Sol Low | [docs/cm5-handoff.md](docs/cm5-handoff.md) | Record verified environment, build and run commands, expected outputs, recovery steps and open checks. Link each completed subtask from this README. Identify the commit and firmware artifact for the deployment session. |
 
 ### Model switches and execution
 
