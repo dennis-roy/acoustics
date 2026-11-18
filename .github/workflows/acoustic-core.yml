@@ -1,0 +1,31 @@
+name: Acoustic core
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bench build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-dev python3-numpy
+      - name: Run reference checks
+        run: |
+          /usr/bin/python3 -m unittest discover -s tests -p 'test_evaluate.py'
+          /usr/bin/python3 bench/simulate.py tone "$RUNNER_TEMP/tone.acou"
+          cc -O2 -std=c11 -Wall -Wextra -Werror -Ifirmware firmware/decimator.c tests/check_decimator.c -lm -o "$RUNNER_TEMP/check_decimator"
+          "$RUNNER_TEMP/check_decimator"
+      - uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: 2.2.0
+          path: pico-sdk
+          submodules: recursive
+      - name: Cross-compile Pico 2 W capture library
+        run: |
+          export PICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk"
+          cmake -S firmware -B "$RUNNER_TEMP/acoustic-build" -DPICO_BOARD=pico2_w -DPICO_NO_PICOTOOL=1
+          cmake --build "$RUNNER_TEMP/acoustic-build" --target acoustic_capture -j2
