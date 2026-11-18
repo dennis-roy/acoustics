@@ -14,18 +14,22 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-dev python3-numpy
       - name: Run reference checks
         run: |
-          /usr/bin/python3 -m unittest discover -s tests -p 'test_evaluate.py'
+          /usr/bin/python3 -m unittest discover -s tests -p 'test_*.py'
           /usr/bin/python3 bench/simulate.py tone "$RUNNER_TEMP/tone.acou"
           cc -O2 -std=c11 -Wall -Wextra -Werror -Ifirmware firmware/decimator.c tests/check_decimator.c -lm -o "$RUNNER_TEMP/check_decimator"
           "$RUNNER_TEMP/check_decimator"
+          cc -std=c11 -Wall -Wextra -Werror -Ifirmware firmware/stream_frame.c tests/check_stream.c -o "$RUNNER_TEMP/check_stream"
+          "$RUNNER_TEMP/check_stream"
       - uses: actions/checkout@v4
         with:
           repository: raspberrypi/pico-sdk
           ref: 2.2.0
           path: pico-sdk
           submodules: recursive
-      - name: Cross-compile Pico 2 W capture library
+      - name: Cross-compile both Pico 2 W images
         run: |
           export PICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk"
-          cmake -S firmware -B "$RUNNER_TEMP/acoustic-build" -DPICO_BOARD=pico2_w -DPICO_NO_PICOTOOL=1
-          cmake --build "$RUNNER_TEMP/acoustic-build" --target acoustic_capture -j2
+          cmake -S firmware -B "$RUNNER_TEMP/acoustic-build" -DPICO_BOARD=pico2_w -DACOUSTIC_ENABLE_MIC=ON -DACOUSTIC_CLOCK_GPIO=0 -DACOUSTIC_DATA_GPIO=1 -DACOUSTIC_SAMPLE_HIGH=1 -DACOUSTIC_SETTLE_WORDS=0
+          cmake --build "$RUNNER_TEMP/acoustic-build" -j2
+          test -s "$RUNNER_TEMP/acoustic-build/acoustic_synthetic.uf2"
+          test -s "$RUNNER_TEMP/acoustic-build/acoustic_microphone.uf2"

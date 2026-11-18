@@ -37,3 +37,7 @@ The sample-rate field describes the configured PCM rate. The simulator uses 1000
 DATA for synthetic run 1, sequence 1, sample index 0, 100000 Hz, zero status bits and samples `123, -456`. This frame requires a matching START and END in a recording.
 
 `41434f5501020100040000000100000000000000010000000000000000000000a0860100000000007b0038fe95bf38a1`
+
+## Bench USB request
+
+After opening CDC with DTR asserted, the CM5 sends one ASCII `R` to request one run. The Pico waits between requests. A successful request streams 100 DATA frames of 256 samples each. A capture fault may end the run early with flags. If USB stalls during transmission, the host records an incomplete run and closes the port. Reopen the port before retrying. A new USB session starts receiver-side validation afresh.
