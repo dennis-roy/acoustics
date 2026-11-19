@@ -4,6 +4,12 @@
 #include "pico/stdlib.h"
 #include "stream_frame.h"
 #include "tusb.h"
+#ifdef ACOUSTIC_MIC
+#include "hardware/clocks.h"
+
+// At 2 MHz, 1,252 words allow 20 ms even across the GPIO handoff.
+enum { STANDARD_WORDS = 1252, TRANSITION_WORDS = 12, FILTER_WARMUP_WORDS = 40 };
+#endif
 
 enum { BLOCKS = 100, ACQUISITION_FAULT = 2 };
 static uint8_t frame[44 + STREAM_BLOCK * 2];
@@ -27,7 +33,7 @@ static bool send_frame(uint8_t kind, uint8_t source, uint64_t run, unsigned seq,
 }
 
 #ifdef ACOUSTIC_MIC
-static bool collect(pdm_decimator *state, unsigned count, bool keep, uint64_t deadline) {
+static bool collect(pdm_decimator *state, unsigned count, int16_t *output, uint64_t deadline) {
     for (unsigned filled = 0; filled < count;) {
         uint32_t words[32];
         unsigned wanted = count - filled;
@@ -36,8 +42,10 @@ static bool collect(pdm_decimator *state, unsigned count, bool keep, uint64_t de
         int n = pdm_capture_read(words, wanted < 32 ? wanted : 32);
         if (n < 0) return false;
         for (int i = 0; i < n; ++i) {
-            int16_t value = pdm_decimate_word(state, words[i]);
-            if (keep) pcm[filled] = value;
+            if (state) {
+                int16_t value = pdm_decimate_word(state, words[i]);
+                if (output) output[filled] = value;
+            }
             ++filled;
         }
     }
@@ -60,12 +68,16 @@ static bool run_once(uint64_t run) {
     bool opened = pdm_capture_open(ACOUSTIC_CLOCK_GPIO, ACOUSTIC_DATA_GPIO, ACOUSTIC_SAMPLE_HIGH);
     pdm_decimator state = {0};
     const uint64_t deadline = time_us_64() + 2000000ull + ACOUSTIC_SETTLE_WORDS * 10ull;
-    if (!opened || !collect(&state, ACOUSTIC_SETTLE_WORDS + 40u, false, deadline))
+    if (!opened || !collect(NULL, STANDARD_WORDS, NULL, deadline) ||
+        !pdm_capture_enter_ultrasonic() ||
+        // Cover the joined RX FIFO, partial shifted word and DMA in flight before settling.
+        !collect(NULL, ACOUSTIC_SETTLE_WORDS + TRANSITION_WORDS, NULL, deadline) ||
+        !collect(&state, FILTER_WARMUP_WORDS, NULL, deadline))
         flags = ACQUISITION_FAULT;
 #endif
     for (; !flags && block < BLOCKS; ++block) {
 #ifdef ACOUSTIC_MIC
-        if (!collect(&state, STREAM_BLOCK, true, deadline)) {
+        if (!collect(&state, STREAM_BLOCK, pcm, deadline)) {
             flags = ACQUISITION_FAULT;
             break;
         }
@@ -87,6 +99,9 @@ static bool run_once(uint64_t run) {
 }
 
 int main(void) {
+#ifdef ACOUSTIC_MIC
+    if (!set_sys_clock_khz(128000, false)) return 1;
+#endif
     if (!stdio_usb_init()) return 1;
     uint64_t run = 0;
     for (;;) {

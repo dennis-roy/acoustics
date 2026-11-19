@@ -28,7 +28,12 @@ if(ACOUSTIC_ENABLE_MIC)
             message(FATAL_ERROR "${setting} must be an explicit nonnegative decimal integer")
         endif()
     endforeach()
-    if(ACOUSTIC_CLOCK_GPIO GREATER 29 OR ACOUSTIC_DATA_GPIO GREATER 29
+    foreach(pin ACOUSTIC_CLOCK_GPIO ACOUSTIC_DATA_GPIO)
+        if(NOT "${${pin}}" MATCHES "^([0-9]|1[0-9]|2[0-2]|2[6-8])$")
+            message(FATAL_ERROR "${pin} must be a Pico header GPIO (0â€“22 or 26â€“28)")
+        endif()
+    endforeach()
+    if(ACOUSTIC_SETTLE_WORDS LESS 1
         OR ACOUSTIC_CLOCK_GPIO EQUAL ACOUSTIC_DATA_GPIO
         OR ACOUSTIC_SAMPLE_HIGH GREATER 1 OR ACOUSTIC_SETTLE_WORDS GREATER 100000)
         message(FATAL_ERROR "Invalid microphone capture configuration")

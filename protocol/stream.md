@@ -41,3 +41,9 @@ DATA for synthetic run 1, sequence 1, sample index 0, 100000 Hz, zero status bit
 ## Bench USB request
 
 After opening CDC with DTR asserted, the CM5 sends one ASCII `R` to request one run. The Pico waits between requests. A successful request streams 100 DATA frames of 256 samples each. A capture fault may end the run early with flags. If USB stalls during transmission, the host records an incomplete run and closes the port. Reopen the port before retrying. A new USB session starts receiver-side validation afresh.
+
+## Production extensions
+
+Version 1 carries signed 16-bit PCM for the microphone bench. A 24-bit PCM container can reduce quantization error when the decimator retains that precision. It cannot extend the microphone's acoustic overload point. Before releasing a new transport version, specify and test sample scaling, packed encoding, WAV representation, quantization, throughput and decoder compatibility. Keep v1 replay available for existing captures.
+
+A future version should define timestamped tach events on a shared or calibrated device timebase, with sequence and integrity checks. If auxiliary channels enter scope, define channel IDs, rates and timestamp alignment explicitly. Current bench captures use only the microphone and do not expose tach timing. Reserve any new fields in a versioned contract once capture hardware and synchronization requirements are known.

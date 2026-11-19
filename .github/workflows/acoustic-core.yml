@@ -38,7 +38,7 @@ jobs:
       - name: Cross-compile both Pico 2 W images
         run: |
           export PICO_SDK_PATH="$GITHUB_WORKSPACE/pico-sdk"
-          cmake -S firmware -B "$RUNNER_TEMP/acoustic-build" -DPICO_BOARD=pico2_w -DACOUSTIC_ENABLE_MIC=ON -DACOUSTIC_CLOCK_GPIO=0 -DACOUSTIC_DATA_GPIO=1 -DACOUSTIC_SAMPLE_HIGH=1 -DACOUSTIC_SETTLE_WORDS=0
+          cmake -S firmware -B "$RUNNER_TEMP/acoustic-build" -DPICO_BOARD=pico2_w -DACOUSTIC_ENABLE_MIC=ON -DACOUSTIC_CLOCK_GPIO=0 -DACOUSTIC_DATA_GPIO=1 -DACOUSTIC_SAMPLE_HIGH=1 -DACOUSTIC_SETTLE_WORDS=2000
           cmake --build "$RUNNER_TEMP/acoustic-build" -j2
           test -s "$RUNNER_TEMP/acoustic-build/acoustic_synthetic.uf2"
           test -s "$RUNNER_TEMP/acoustic-build/acoustic_microphone.uf2"
